@@ -1,18 +1,3 @@
 // hello there
-seleno pocket put result "Hello World"
-seleno say result
-
-seleno pocket put result2 1
-seleno say result2
-
-seleno pocket put result2 2
-seleno say result2
-
-seleno pocket put result2 3
-seleno say result2
-
-seleno pocket put run 1
-
-seleno run repeat
-seleno say result2
-seleno end
+seleno pocket put hello "Hello World"
+seleno say hello
