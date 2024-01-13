@@ -1,5 +1,5 @@
 # [![Seleno](https://i.kym-cdn.com/entries/icons/facebook/000/047/114/yellow_emoji_in_darkness_cover.jpg)](https://github.com/bcbro2021/seleno)
-# Seleno
+# Seleno🕶💅🔥
 A based esolang built purely with love and pain..
 
 ## Installation
