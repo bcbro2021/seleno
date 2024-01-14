@@ -1,3 +1,6 @@
 // hello there
-seleno pocket put hello "Hello World"
+seleno pocket put hello "Hello World!"
 seleno say hello
+
+seleno listen input ">"
+seleno say input

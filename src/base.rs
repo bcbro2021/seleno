@@ -1,9 +1,10 @@
-use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD};
+use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD, LISTEN_KEYWORD};
 use std::{io::{self, Write, BufRead, BufReader}, collections::HashMap};
 use std::fs::File;
 use eval::eval;
 use std::process;
 
+// lib stuff
 pub fn read_lines(file_path: &str) -> io::Result<Vec<String>> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
@@ -21,6 +22,7 @@ pub fn input(prompt: &str) -> String {
     input.trim().to_string()
 }
 
+// std functions
 pub fn process_variables(tokens: &[Token], vars: &mut HashMap<String, String>) {
     if tokens.len() >= 5 {
         if tokens[0].t == CATHU_KEYWORD
@@ -29,7 +31,7 @@ pub fn process_variables(tokens: &[Token], vars: &mut HashMap<String, String>) {
             && tokens[3].t == IDENTIFIER
         {
             if tokens[4].t == STRING_LITERAL {
-                vars.insert(tokens[3].val.clone(), tokens[4].val.clone());
+                vars.insert(tokens[3].val.clone(), tokens[4].val.clone().replace('"', ""));
             }
             else if tokens[4].t == NUMBER_LITERAL {
                 if tokens.len() > 5 {
@@ -73,12 +75,21 @@ pub fn process_print(tokens: &Vec<Token>, vars: &HashMap<String, String>) {
     }
 }
 
-pub fn run_program(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
-    process_variables(&tokens, vars);
-    process_print(&tokens, &vars);
+pub fn process_input(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
+    if tokens.len() >= 4 {
+        if tokens[0].t == CATHU_KEYWORD
+            && tokens[1].t == LISTEN_KEYWORD
+            && tokens[2].t == IDENTIFIER
+            && tokens[3].t == STRING_LITERAL
+        {
+            let response = input(&tokens[3].val.replace('"', ""));
+            vars.insert(tokens[2].val.clone(), response);
+        }
+    }
 }
 
-pub fn run_loop(mut i: usize, tokens: &Vec<Token>, vars: &mut HashMap<String, String>, lines: &Vec<String>) {
+// main functions to handle program
+pub fn process_loop(mut i: usize, tokens: &Vec<Token>, vars: &mut HashMap<String, String>, lines: &Vec<String>) {
     if tokens.len() >= 3
         && tokens[0].t == CATHU_KEYWORD
         && tokens[1].t == IDENTIFIER
@@ -101,11 +112,24 @@ pub fn run_loop(mut i: usize, tokens: &Vec<Token>, vars: &mut HashMap<String, St
         while vars.get(&tokens[1].val) == Some(&"1".to_string()) {
             for x in i + 1..j {
                 let inner_tokens = tokenizer(&lines[x]);
-                run_program(&inner_tokens, vars);
+                process_std(&inner_tokens, vars);
             }
         }
 
         // Move i to the next line after the loop
         i = j + 1;
     }
+}
+
+pub fn process_std(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
+    process_variables(&tokens, vars);
+    process_print(&tokens, &vars);
+    process_input(tokens, vars);
+}
+
+// program executor
+pub fn run_program(i:  usize,tokens: &Vec<Token>, mut vars: &mut HashMap<String, String>, lines: &Vec<String>) {
+    process_std(&tokens, &mut vars);
+    // loop checking
+    process_loop(i, &tokens, &mut vars, &lines);
 }

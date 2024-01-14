@@ -19,9 +19,7 @@ fn main() {
             let tokens = tokenizer(text);
 
             // process everything
-            run_program(&tokens, &mut vars);
-            // loop checking
-            run_loop(i, &tokens, &mut vars, &lines);
+            run_program(i, &tokens, &mut vars, &lines);
             i += 1;
         }
     } else {
@@ -31,7 +29,7 @@ fn main() {
             println!("{:#?}", &vars);
 
             // process everything
-            run_program(&tokens, &mut vars);
+            process_std(&tokens, &mut vars);
         }
     }
     
