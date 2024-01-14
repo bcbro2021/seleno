@@ -7,33 +7,37 @@ pub struct Token {
     pub val: String,
 }
 
+
 pub const CATHU_KEYWORD: &str = "seleno";
 pub const ASSIGNMENT_KEYWORD: &str = "put";
 pub const IDENTIFIER: &str = "Identifier";
 pub const UNKNOWN: &str = "Unknown";
 
+// std
 pub const SAY_KEYWORD: &str = "say";
 pub const LISTEN_KEYWORD: &str = "listen";
 pub const POCKET_KEYWORD: &str = "pocket";
-pub const REPEAT_KEYWORD: &str = "repeat";
+pub const ACQUIRE_KEYWORD: &str = "acquire";
+pub const READ_KEYWORD: &str = "read";
 
-pub const IF_KEYWORD: &str = "if";
-pub const THEN_KEYWORD: &str = "then";
+// loop
+pub const REPEAT_KEYWORD: &str = "repeat";
 pub const END_KEYWORD: &str = "end";
 
+// data types
 pub const STRING_LITERAL: &str = "StringLiteral";
 pub const NUMBER_LITERAL: &str = "NumberLiteral";
 
 pub fn tokenizer(input: &str) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
-    let for_re = format!(r#"{}|pocket|say|listen|repeat|\bput\b|"[^"]*"|\b\d+\b|[a-zA-Z_]\w*|[-+*/]|\)\("#,CATHU_KEYWORD);
+    let for_re = format!(r#"{}|pocket|say|listen|repeat|acquire|read|\bput\b|"[^"]*"|\b\d+\b|[a-zA-Z_]\w*|[-+*/]|\)\("#,CATHU_KEYWORD);
     let re = Regex::new(for_re.as_str()).unwrap();
 
     for capture in re.captures_iter(input) {
         if let Some(value) = capture.get(0) {
             let token = value.as_str();
             let t_type = match token {
-                CATHU_KEYWORD | POCKET_KEYWORD | SAY_KEYWORD | LISTEN_KEYWORD | ASSIGNMENT_KEYWORD | REPEAT_KEYWORD | END_KEYWORD | "+" | "-" | "*" | "/" | ")" | "(" => {
+                CATHU_KEYWORD | POCKET_KEYWORD | SAY_KEYWORD | LISTEN_KEYWORD | ASSIGNMENT_KEYWORD | REPEAT_KEYWORD | END_KEYWORD | ACQUIRE_KEYWORD| READ_KEYWORD | "+" | "-" | "*" | "/" | ")" | "(" => {
                     token
                 }
                 s if s.starts_with('"') && s.ends_with('"') => STRING_LITERAL,

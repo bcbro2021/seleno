@@ -1,5 +1,5 @@
-use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD, LISTEN_KEYWORD};
-use std::{io::{self, Write, BufRead, BufReader}, collections::HashMap};
+use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD, LISTEN_KEYWORD, ACQUIRE_KEYWORD, READ_KEYWORD};
+use std::{io::{self, Write, BufRead, BufReader}, collections::HashMap, fs};
 use std::fs::File;
 use eval::eval;
 use std::process;
@@ -12,6 +12,16 @@ pub fn read_lines(file_path: &str) -> io::Result<Vec<String>> {
     let lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
 
     Ok(lines)
+}
+
+fn read_file_to_string(file_path: &str) -> Result<String, std::io::Error> {
+    let contents = fs::read_to_string(file_path)?;
+    Ok(contents)
+}
+
+fn write_string_to_file(file_path: &str, content: &str) {
+    let mut file = std::fs::File::create(file_path).expect("create failed");
+    file.write_all(content.as_bytes()).expect("write failed");
 }
 
 pub fn input(prompt: &str) -> String {
@@ -44,7 +54,6 @@ pub fn process_variables(tokens: &[Token], vars: &mut HashMap<String, String>) {
                         }
                     }
                     let result = eval(exp.as_str()).unwrap();
-                    println!("{}",exp.as_str());
                     vars.insert(tokens[3].val.clone(), result.to_string());
                 } else {
                     vars.insert(tokens[3].val.clone(), tokens[4].val.to_string());
@@ -88,6 +97,55 @@ pub fn process_input(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
     }
 }
 
+pub fn process_read(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
+    if tokens.len() >= 4 {
+        if tokens[0].t == CATHU_KEYWORD
+            && tokens[1].t == READ_KEYWORD
+            && tokens[2].t == IDENTIFIER
+            && tokens[3].t == STRING_LITERAL
+        {
+            let path = &tokens[3].val.replace('"', "");
+            let data = read_file_to_string(path.as_str());
+            if let Ok(final_data) = data {
+                vars.insert(tokens[2].val.clone(), final_data);
+            } else {
+                println!("{} says: you stoopid, {} prolly doesnt exist.", CATHU_KEYWORD, &tokens[3].val);
+                process::exit(-1);
+            }
+        }
+    }
+}
+
+pub fn process_import(tokens: &Vec<Token>, mut vars: &mut HashMap<String, String>) {
+    if tokens.len() >= 3 {
+        if tokens[0].t == CATHU_KEYWORD
+            && tokens[1].t == ACQUIRE_KEYWORD
+            && tokens[2].t == STRING_LITERAL
+        {
+            let path = &tokens[2].val.replace('"', "");
+            let mut new_path = path.clone();
+            new_path.push_str(".tt");
+
+            let lines = read_lines(new_path.as_str());
+            if let Ok(new_lines) = lines {
+                let mut i = 0;
+                while i < new_lines.len() {
+                    let text = &new_lines[i];
+                    let itokens = tokenizer(text);
+
+                    // process everything
+                    run_program(i, &itokens, &mut vars, &new_lines);
+                    i += 1;
+                }
+            } else {
+                println!("{} says: you stoopid, the import of {} failed cause \nit prolly doesnt exist.", CATHU_KEYWORD, format!("'{}'",new_path));
+                process::exit(-1);
+            }
+            
+        }
+    }
+}
+
 // main functions to handle program
 pub fn process_loop(mut i: usize, tokens: &Vec<Token>, vars: &mut HashMap<String, String>, lines: &Vec<String>) {
     if tokens.len() >= 3
@@ -122,9 +180,12 @@ pub fn process_loop(mut i: usize, tokens: &Vec<Token>, vars: &mut HashMap<String
 }
 
 pub fn process_std(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
+    process_import(tokens, vars);
     process_variables(&tokens, vars);
+
     process_print(&tokens, &vars);
     process_input(tokens, vars);
+    process_read(tokens, vars);
 }
 
 // program executor

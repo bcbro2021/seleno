@@ -1,0 +1,5 @@
+seleno pocket put run "base.tt ran"
+seleno say run
+
+seleno read cargo "Cargo.toml"
+seleno write cargo "test.toml"

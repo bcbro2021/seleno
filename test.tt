@@ -1,6 +1,9 @@
-// hello there
-seleno pocket put hello "Hello World!"
+// importing base.tt
+seleno acquire "base"
+
+// hello world program
+
+seleno pocket put hello "hello world"
 seleno say hello
 
-seleno listen input ">"
-seleno say input
+seleno say cargo
