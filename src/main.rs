@@ -26,7 +26,6 @@ fn main() {
         loop {
             let text = input(">");
             let tokens = tokenizer(&text);
-            println!("{:#?}", &vars);
 
             // process everything
             process_std(&tokens, &mut vars);

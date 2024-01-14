@@ -7,3 +7,4 @@ seleno pocket put hello "hello world"
 seleno say hello
 
 seleno say cargo
+seleno write cargo "test.tst"

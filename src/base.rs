@@ -1,5 +1,5 @@
-use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD, LISTEN_KEYWORD, ACQUIRE_KEYWORD, READ_KEYWORD};
-use std::{io::{self, Write, BufRead, BufReader}, collections::HashMap, fs};
+use toky::{self, tokenizer, Token, CATHU_KEYWORD, SAY_KEYWORD, IDENTIFIER, POCKET_KEYWORD, ASSIGNMENT_KEYWORD, STRING_LITERAL, NUMBER_LITERAL, REPEAT_KEYWORD, END_KEYWORD, LISTEN_KEYWORD, ACQUIRE_KEYWORD, READ_KEYWORD, WRITE_KEYWORD};
+use std::{io::{self, Write, BufRead, BufReader}, collections::HashMap, fs::{self, OpenOptions}, path::PathBuf};
 use std::fs::File;
 use eval::eval;
 use std::process;
@@ -19,9 +19,20 @@ fn read_file_to_string(file_path: &str) -> Result<String, std::io::Error> {
     Ok(contents)
 }
 
-fn write_string_to_file(file_path: &str, content: &str) {
-    let mut file = std::fs::File::create(file_path).expect("create failed");
-    file.write_all(content.as_bytes()).expect("write failed");
+fn write_to_file(file_path: &str, content: &str) {
+    // Convert the file path to a PathBuf
+    let path = PathBuf::from(file_path);
+
+    // Check if the file already exists
+    if path.exists() && !path.is_file() {
+        process::exit(-1);
+    }
+
+    // Open the file in append mode, creating it if it doesn't exist
+    let mut file = OpenOptions::new().write(true).create(true).open(&path).unwrap();
+
+    // Write the content to the file
+    file.write(content.as_bytes()).unwrap();
 }
 
 pub fn input(prompt: &str) -> String {
@@ -116,6 +127,20 @@ pub fn process_read(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
     }
 }
 
+pub fn process_write(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
+    if tokens.len() >= 4 {
+        if tokens[0].t == CATHU_KEYWORD
+            && tokens[1].t == WRITE_KEYWORD
+            && tokens[2].t == IDENTIFIER
+            && tokens[3].t == STRING_LITERAL
+        {
+            let path = &tokens[3].val.replace('"', "");
+            let data = vars.get(&tokens[2].val).unwrap();
+            write_to_file(path, data);
+        }
+    }
+}
+
 pub fn process_import(tokens: &Vec<Token>, mut vars: &mut HashMap<String, String>) {
     if tokens.len() >= 3 {
         if tokens[0].t == CATHU_KEYWORD
@@ -186,6 +211,7 @@ pub fn process_std(tokens: &Vec<Token>, vars: &mut HashMap<String, String>) {
     process_print(&tokens, &vars);
     process_input(tokens, vars);
     process_read(tokens, vars);
+    process_write(tokens, vars);
 }
 
 // program executor
